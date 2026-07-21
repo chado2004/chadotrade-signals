@@ -1,0 +1,39 @@
+name: ChadoTrade — Signaux Chapitre 15
+
+on:
+  schedule:
+    # Toutes les 15 minutes. GitHub peut retarder légèrement l'exécution
+    # aux heures de forte charge — c'est normal et sans impact ici.
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}   # bouton "Run workflow" manuel dans l'onglet Actions
+
+permissions:
+  contents: write   # nécessaire pour committer state.json (dédup)
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install -r requirements.txt
+
+      - name: Lancer le scan
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GMAIL_TO: ${{ secrets.GMAIL_TO }}
+        run: python signals_bot.py
+
+      - name: Sauvegarder l'état (anti-doublons)
+        run: |
+          git config user.name "chadotrade-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add state.json
+          git diff --staged --quiet || git commit -m "update state [skip ci]"
+          git push
