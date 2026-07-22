@@ -556,6 +556,7 @@ async def main():
 
     print(f"{len(signals)} signal(aux) détecté(s), {len(new_signals)} nouveau(x).")
 
+    send_email("Test", 1)
     if new_signals:
         body = format_email(new_signals)
         send_email(body, len(new_signals))
